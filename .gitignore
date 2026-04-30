@@ -1,0 +1,5 @@
+.superpowers/
+.claude/settings.local.json
+*.log
+*.bak.*
+.DS_Store

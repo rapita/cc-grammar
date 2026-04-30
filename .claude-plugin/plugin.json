@@ -1,0 +1,17 @@
+{
+  "name": "claude-grammar",
+  "version": "0.2.0",
+  "description": "Background English grammar coach. A single async UserPromptSubmit hook runs the check while your prompt submits, then writes up to 3 corrections to /tmp/grammar-<session>.txt for your statusline tool to render. Never enters the model's conversation context.",
+  "author": {
+    "name": "Nazar Rapita",
+    "email": "n.i.rapita@gmail.com"
+  },
+  "homepage": "https://github.com/rapita/claude-grammar",
+  "license": "MIT",
+  "keywords": [
+    "grammar",
+    "english",
+    "coach",
+    "hooks"
+  ]
+}

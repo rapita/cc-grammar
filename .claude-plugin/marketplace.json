@@ -1,0 +1,20 @@
+{
+  "name": "rapita-claude-grammar",
+  "owner": {
+    "name": "Nazar Rapita",
+    "email": "n.i.rapita@gmail.com"
+  },
+  "description": "Personal marketplace shipping the claude-grammar grammar-coach plugin.",
+  "plugins": [
+    {
+      "name": "claude-grammar",
+      "source": "./",
+      "description": "Background English grammar coach. Up to 3 corrections per prompt, ordered by CEFR level (A1 first).",
+      "version": "0.2.0",
+      "author": {
+        "name": "Nazar Rapita",
+        "email": "n.i.rapita@gmail.com"
+      }
+    }
+  ]
+}
