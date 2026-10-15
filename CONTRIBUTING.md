@@ -15,8 +15,8 @@ cc-grammar is a [Claude Code mod](https://code.claude.com/docs/en/plugins/mods/o
 ## Run from source
 
 ```bash
-git clone https://github.com/rapita/claude-grammar
-claude --plugin-dir ./claude-grammar
+git clone https://github.com/rapita/cc-grammar
+claude --plugin-dir ./cc-grammar
 ```
 
 Claude Code writes the type declarations of the running build into `.claude-plugin/types/` when it loads the mod from `--plugin-dir`. They are not committed: they belong to your build.

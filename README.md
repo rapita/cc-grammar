@@ -28,8 +28,8 @@ A message you sent in English with mistakes:
 ## Install
 
 ```bash
-claude plugin marketplace add rapita/claude-grammar
-claude plugin install cc-grammar@rapita-claude-grammar
+claude plugin marketplace add rapita/cc-grammar
+claude plugin install cc-grammar@rapita
 ```
 
 cc-grammar is a [mod](https://code.claude.com/docs/en/plugins/mods/overview). It needs Claude Code 2.1.300 or later in the terminal, with mods allowed.
@@ -71,13 +71,15 @@ Run `/config` and type `cc-grammar`:
 
 ## Version 1
 
-v1 checked a prompt after you sent it, with an async `UserPromptSubmit` hook, and wrote up to three corrections to a file for your status line. It is kept at the [v1.0.0 tag](https://github.com/rapita/claude-grammar/tree/v1.0.0). Claude Code 2.1.300 reserves plugin names that start with `claude-`, so v1's name no longer passes validation, and v2 is named cc-grammar.
+v1 checked a prompt after you sent it, with an async `UserPromptSubmit` hook, and wrote up to three corrections to a file for your status line. It is kept at the [v1.0.0 tag](https://github.com/rapita/cc-grammar/tree/v1.0.0). Claude Code 2.1.300 reserves plugin names that start with `claude-`, so v1's name no longer passes validation, and v2 is named cc-grammar.
 
-Moving from v1:
+## Moving from an earlier install
 
-1. `claude plugin uninstall claude-grammar@rapita-claude-grammar`.
-2. Undo what `/claude-grammar:setup` added to your status line. With ccstatusline, delete the segment that runs `~/.claude/grammar-status.sh`. With a script of your own, delete the two lines it appended, the marker comment and the call. If setup wrote the whole `statusLine` block in `~/.claude/settings.json` because you had none, delete that block: deleting only its `command` line leaves invalid JSON.
-3. `rm ~/.claude/grammar-status.sh`.
+Before 2.0.2 the repository was `rapita/claude-grammar` and the marketplace was named `rapita-claude-grammar`. That covers v1 (`claude-grammar`) and cc-grammar 2.0.0 and 2.0.1.
+
+1. `claude plugin marketplace remove rapita-claude-grammar`. This also uninstalls what came from it, with its settings.
+2. Install as above, and set your settings again in `/config`.
+3. From v1 only: undo what `/claude-grammar:setup` added to your status line. With ccstatusline, delete the segment that runs `~/.claude/grammar-status.sh`. With a script of your own, delete the two lines it appended, the marker comment and the call. If setup wrote the whole `statusLine` block in `~/.claude/settings.json` because you had none, delete that block: deleting only its `command` line leaves invalid JSON. Then `rm ~/.claude/grammar-status.sh`.
 
 ## License
 
