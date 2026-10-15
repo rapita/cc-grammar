@@ -29,7 +29,7 @@ A message you sent in English with mistakes:
 
 ```bash
 claude plugin marketplace add rapita/cc-grammar
-claude plugin install cc-grammar@rapita
+claude plugin install cc-grammar@rapita-cc-grammar
 ```
 
 cc-grammar is a [mod](https://code.claude.com/docs/en/plugins/mods/overview). It needs Claude Code 2.1.300 or later in the terminal, with mods allowed.
@@ -75,9 +75,9 @@ v1 checked a prompt after you sent it, with an async `UserPromptSubmit` hook, an
 
 ## Moving from an earlier install
 
-Before 2.0.2 the repository was `rapita/claude-grammar` and the marketplace was named `rapita-claude-grammar`. That covers v1 (`claude-grammar`) and cc-grammar 2.0.0 and 2.0.1.
+Before 2.0.2 the repository was `rapita/claude-grammar` and the marketplace was named `rapita-claude-grammar`. That covers v1 (`claude-grammar`) and cc-grammar 2.0.0 and 2.0.1. In 2.0.2 the marketplace was named `rapita`.
 
-1. `claude plugin marketplace remove rapita-claude-grammar`. This also uninstalls what came from it, with its settings.
+1. `claude plugin marketplace remove rapita-claude-grammar` (or `rapita`, for 2.0.2). This also uninstalls what came from it, with its settings.
 2. Install as above, and set your settings again in `/config`.
 3. From v1 only: undo what `/claude-grammar:setup` added to your status line. With ccstatusline, delete the segment that runs `~/.claude/grammar-status.sh`. With a script of your own, delete the two lines it appended, the marker comment and the call. If setup wrote the whole `statusLine` block in `~/.claude/settings.json` because you had none, delete that block: deleting only its `command` line leaves invalid JSON. Then `rm ~/.claude/grammar-status.sh`.
 
