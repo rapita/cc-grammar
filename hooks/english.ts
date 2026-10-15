@@ -37,6 +37,23 @@ const ownWords = (draft: string) => ownText(draft).replace(/\[(?:Pasted text|Ima
 const wordCount = (draft: string) => ownWords(draft).split(/\s+/).filter(Boolean).length
 
 /**
+ * Whether the draft the box last showed is the message sent: the same text, or the same with each paste or
+ * image chip expanded. A box that changed with no edit (a history recall, a clear) showed another message.
+ */
+export function isSentAs(draft: string, sent: string): boolean {
+  if (!draft.trim()) return false
+  const parts = draft.split(/\[(?:Pasted text|Image) #\d+[^\]]*\]/)
+  if (parts.length === 1) return draft === sent
+  let at = 0
+  for (const part of parts) {
+    const i = sent.indexOf(part, at)
+    if (i < 0) return false
+    at = i + part.length
+  }
+  return true
+}
+
+/**
  * Whether a draft gets English help. The gray text while typing needs three or more of the person's own
  * words, a draft no longer than `longest` characters and three lines, and no paste; the key takes any of
  * their words, any length, and keeps paste chips as they are. A go, a digit or a command never.

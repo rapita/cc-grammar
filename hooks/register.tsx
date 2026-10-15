@@ -14,6 +14,7 @@ import {
   afterNeed,
   clean,
   faithful,
+  isSentAs,
   needOf,
   ownRuns,
   ownText,
@@ -44,7 +45,6 @@ let longest = 280
 // The box: what it holds, what is offered for it, and whether it is in shell mode ('!'), where a command
 // is typed and a fill of ours would switch the box back to a prompt.
 let draft = ''
-let sent = ''
 let edits = 0
 let shell = false
 let ghost: { for: string; english: English } | null = null
@@ -64,7 +64,6 @@ const forget = () => {
   timer = null
   seq++
   draft = ''
-  sent = ''
   ghost = null
   taken = null
   note = null
@@ -247,19 +246,6 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  // A history recall, a clear or a fill changes the box with no edit: what the box holds is still known.
-  // A submit empties the box before prompt.submit runs, so the draft it took is kept for it.
-  on('prompt.change', async ($, e, next) => {
-    const r = await next(e)
-    if (e.origin.kind === 'clear' && draft) sent = draft
-    if (e.text !== draft) {
-      draft = e.text
-      if (taken && e.text !== taken.english) taken = null
-      if (ghost && ghost.for !== e.text && !taken) ghost = null
-    }
-    return r
-  })
-
   on('prompt.edit', async ($, e, next) => {
     edits++
     const r = await next(e)
@@ -296,9 +282,9 @@ export const register: Register = (on, options) => {
     timer?.cancel()
     timer = null
     seq++
-    // What you saw in the box: a long paste is still its [Pasted text] chip there, never its contents.
-    const typed = draft || sent || e.text
-    sent = ''
+    // What you saw in the box: a long paste is still its [Pasted text] chip there, never its contents. A box
+    // that changed with no edit (a history recall, a clear) showed another message: then the one sent.
+    const typed = isSentAs(draft, e.text) ? draft : e.text
     const sawIt = seen.has(norm(typed))
     ghost = null
     taken = null

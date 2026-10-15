@@ -3,6 +3,7 @@ import {
   afterNeed,
   clean,
   faithful,
+  isSentAs,
   keepTokens,
   needOf,
   ownRuns,
@@ -113,4 +114,12 @@ test('answers under several quotes are translated in place, or not at all', asyn
   expect(parseSegments('<p1>No</p1>', 2)).toBe(null)
   expect(parseSegments('<p1>No</p1><p2>Yes</p2><p3>Extra</p3>', 2)).toBe(null)
   expect(rebuild(draft, ['No, for a day', 'Yes, we keep it'])).toBe('> Plan: cache the report for an hour\nNo, for a day\n> Note: the export runs at night\nYes, we keep it')
+})
+
+test('the draft the box last showed is the message sent: the same words, with its paste chips expanded', async () => {
+  expect(isSentAs('why this test fail on CI', 'why this test fail on CI')).toBe(true)
+  expect(isSentAs('[Pasted text #1 +8 lines] why this test fail on CI', '<pasted_content id="1">\nline 1\n</pasted_content> why this test fail on CI')).toBe(true)
+  expect(isSentAs('he go to eat a apple after the build', 'перевір чому тест експорту падає на CI')).toBe(false)
+  expect(isSentAs('[Pasted text #1 +8 lines] why this test fail', 'other words entirely')).toBe(false)
+  expect(isSentAs('', 'why this test fail on CI')).toBe(false)
 })

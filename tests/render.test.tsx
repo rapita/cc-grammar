@@ -69,19 +69,38 @@ test('the ✎ check reads the message as the box showed it: a long paste is its 
     const text = e.text.slice(0, e.start) + e.inputText + e.text.slice(e.end)
     return { text, cursor: e.start + e.inputText.length }
   })
-  on('prompt.change', async ($, e) => ({ text: e.text }))
   on('prompt.submit', async ($, e) => ({ text: e.text }))
-  // The kit dispatches the composer's own edit and change events; its typings leave them out.
-  const box = $.prompt as unknown as { edit: (e: object) => Promise<unknown>; change: (e: object) => Promise<unknown> }
+  // The kit dispatches the composer's own edit event; its typings leave it out.
+  const box = $.prompt as unknown as { edit: (e: object) => Promise<unknown> }
   const typed = '[Pasted text #1 +8 lines] why this test fail on CI'
   await box.edit({ origin: composer, text: '', cursor: 0, start: 0, end: 0, inputText: typed })
-  // The submit empties the box first; then the message arrives with the paste expanded.
-  await box.change({ text: '', cursor: 0, origin: { kind: 'clear' } })
+  // The message arrives with the paste expanded.
   await $.prompt.submit({ text: '<pasted_content id="1">\nline 1: tests was failing\n</pasted_content> why this test fail on CI', wait: false, origin: composer })
   await settle()
   expect(asked.length).toBe(1)
   expect(asked[0]).toContain('[Pasted text #1 +8 lines] why this test fail on CI')
   expect(asked[0]).not.toContain('tests was failing')
+})
+
+test('a message the box took with no edit, such as one recalled from history, is checked as sent', async ($, on) => {
+  const asked: string[] = []
+  on('model.complete', async ($, e) => {
+    asked.push((e as unknown as { prompt: string }).prompt)
+    return { value: { isAnswered: true, text: 'Check why the export test fails on CI', usage } }
+  })
+  on('prompt.edit', async ($, e) => {
+    const text = e.text.slice(0, e.start) + e.inputText + e.text.slice(e.end)
+    return { text, cursor: e.start + e.inputText.length }
+  })
+  on('prompt.submit', async ($, e) => ({ text: e.text }))
+  const box = $.prompt as unknown as { edit: (e: object) => Promise<unknown> }
+  await box.edit({ origin: composer, text: '', cursor: 0, start: 0, end: 0, inputText: 'he go to eat a apple after the build' })
+  // The box now holds an earlier message from history, which no edit brought: the mod never saw it.
+  const sent = 'перевір чому тест експорту падає на CI'
+  await $.prompt.submit({ text: sent, wait: false, origin: composer })
+  await settle()
+  expect(asked.length).toBe(1)
+  expect(asked[0]).toContain(sent)
 })
 
 test('English with mistakes gets up to three corrections with their rule names', async ($, on) => {
