@@ -98,9 +98,11 @@ test('model text is cleaned, near-equal English is no change, and corrections ar
 
 test('the grammar check names each rule in the chosen language, or not at all', async () => {
   expect(pairsSystem('Ukrainian')).toContain('ONE word in Ukrainian')
+  expect(pairsSystem('Ukrainian')).toContain('Never write the rule in English')
+  expect(pairsSystem('Ukrainian')).not.toContain('[agreement]')
   expect(pairsSystem('none')).not.toContain('[rule]')
   expect(pairsSystem('none')).toContain('"original" -> "fix"')
-  expect(pairsSystem()).toContain('ONE word in English')
+  expect(pairsSystem()).toContain('[agreement], [tense]')
 })
 
 test('answers under several quotes are translated in place, or not at all', async () => {
