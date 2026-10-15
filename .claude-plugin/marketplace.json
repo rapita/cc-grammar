@@ -4,17 +4,20 @@
     "name": "Nazar Rapita",
     "email": "n.i.rapita@gmail.com"
   },
-  "description": "Personal marketplace shipping the claude-grammar grammar-coach plugin.",
+  "description": "Personal marketplace shipping the cc-grammar English coach.",
   "plugins": [
     {
-      "name": "claude-grammar",
+      "name": "cc-grammar",
       "source": "./",
-      "description": "Background English grammar coach. Up to 3 corrections per prompt, ordered by CEFR level (A1 first).",
-      "version": "1.0.0",
+      "description": "English while you write a prompt: the English of your draft in gray, one key to take it, and up to 3 corrections ordered by CEFR level (A1 first).",
+      "version": "2.0.0",
       "author": {
         "name": "Nazar Rapita",
         "email": "n.i.rapita@gmail.com"
       }
     }
-  ]
+  ],
+  "renames": {
+    "claude-grammar": null
+  }
 }

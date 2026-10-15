@@ -1,7 +1,7 @@
 {
-  "name": "claude-grammar",
-  "version": "1.0.0",
-  "description": "Background English grammar coach. A single async UserPromptSubmit hook runs the check while your prompt submits, then writes up to 3 corrections to /tmp/grammar-<session>.txt for your statusline tool to render. Never enters the model's conversation context.",
+  "name": "cc-grammar",
+  "version": "2.0.0",
+  "description": "English while you write a prompt, for your eyes only. After a pause, the English of your draft shows in gray after it: translated from any language, or your English corrected. The key you bind to /english (Tab) takes it, and gives your words back. A message sent without seeing its English gets one gray ✎ line: the English, or up to 3 corrections ordered A1 → C1+. Your own words go to Haiku for this, drafts too; the conversation's model never sees any of it.",
   "author": {
     "name": "Nazar Rapita",
     "email": "n.i.rapita@gmail.com"
@@ -11,7 +11,44 @@
   "keywords": [
     "grammar",
     "english",
+    "translation",
     "coach",
-    "hooks"
-  ]
+    "mod"
+  ],
+  "userConfig": {
+    "when": {
+      "type": "string",
+      "title": "When",
+      "description": "'as I type': after a pause your draft goes to Haiku and its English shows in gray after it. 'after I send': a message whose English you did not see gets one gray ✎ line. 'off': nothing goes to Haiku unless you press the key.",
+      "options": [
+        "as I type and after I send",
+        "as I type",
+        "after I send",
+        "off"
+      ],
+      "default": "as I type and after I send"
+    },
+    "rule_names": {
+      "type": "string",
+      "title": "Rule names",
+      "description": "The language of the one-word rule name after each correction on the ✎ line (English, Ukrainian, Spanish, ...), or none.",
+      "default": "English"
+    },
+    "pause": {
+      "type": "number",
+      "title": "Pause (ms)",
+      "description": "How long after your last key the draft goes to Haiku.",
+      "default": 700,
+      "min": 300,
+      "max": 5000
+    },
+    "longest": {
+      "type": "number",
+      "title": "Longest draft (characters)",
+      "description": "The longest draft that gets gray English while you type, and the longest message in another language that gets a ✎ line. The key takes longer drafts too.",
+      "default": 280,
+      "min": 40,
+      "max": 2000
+    }
+  }
 }

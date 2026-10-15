@@ -1,57 +1,84 @@
-# claude-grammar
+# cc-grammar
 
-Background English grammar coach for [Claude Code](https://docs.claude.com/en/docs/claude-code), packaged as a native plugin. Runs on every prompt you submit, finds up to 3 grammar issues (ordered A1 → C1+ by CEFR level), and shows them in your statusline — never in Claude's context.
+English while you write prompts in [Claude Code](https://code.claude.com/docs/en/overview). Write in your own language, or in English with mistakes: after a short pause, the English of your draft shows in gray right after it. One key takes it into the prompt, and the same key gives your words back. A message you send without seeing its English gets one gray ✎ line under it: its English, or up to three corrections of your English, simplest first (CEFR A1 → C1+).
 
-Claude Code-native: a single `UserPromptSubmit` hook, plain bash, no third-party services. The bundled `/claude-grammar:setup` command wires it into your statusline (ccstatusline, native `statusLine`, or a custom script).
+All of it is for your eyes only. Nothing enters Claude's context, and nothing is ever sent for you.
 
 ## What it looks like
 
-Type a message with errors, hit enter — your prompt submits immediately. ~1–2 seconds later, the corrections appear in your statusline as a tree:
+While you type, after a pause:
 
 ```
-EN(2)
-├ i has → I have
-└ he go → he goes
+❯ перевір чому падає тест експорту на CI  → Check why the export test is failing on CI
 ```
 
-Originals are colored red, fixes green; the badge and tree glyphs are dim. Suggestions go from lower to higher CEFR level (A1 → C1+). When your message is fine, the statusline stays clean.
+Press Tab, and the English is your draft; Tab again gives your words back:
 
-**Corrections are written for you, not for Claude.** They live in a per-session file under `/tmp/`, never enter the model's context window, and won't influence its next response.
+```
+❯ Check why the export test is failing on CI
+```
+
+A message you sent in English with mistakes:
+
+```
+❯ please check why the export test fail on CI but pass locally
+  ✎ the export test fail → the export test fails (agreement) · but pass locally → but passes locally (agreement)
+```
 
 ## Install
 
 ```bash
 claude plugin marketplace add rapita/claude-grammar
-claude plugin install claude-grammar@rapita-claude-grammar
+claude plugin install cc-grammar@rapita-claude-grammar
 ```
 
-Then run the setup command in Claude Code:
+cc-grammar is a [mod](https://code.claude.com/docs/en/plugins/mods/overview). It needs Claude Code 2.1.300 or later in the terminal, with mods allowed.
 
+### Bind the key
+
+cc-grammar adds the command `/english`. Bind Tab to it in `~/.claude/keybindings.json` (`/keybindings` opens the file):
+
+```json
+{
+  "bindings": [
+    { "context": "Chat", "bindings": { "tab": "command:english" } },
+    { "context": "Autocomplete", "bindings": { "tab": "autocomplete:accept" } }
+  ]
+}
 ```
-/claude-grammar:setup
-```
 
-It copies the statusline widget into `~/.claude/grammar-status.sh` and wires it into whatever statusline you already use. Re-run any time — it's idempotent and creates timestamped backups before any write.
+The second binding keeps Tab for the menus of slash commands and @-mentions: without it, the first one takes Tab there too. Tab is not a letter, so it works whatever keyboard layout is on. In an empty prompt, → still takes Claude Code's own suggestion. Another key works too, if Claude Code does not reserve it and it is not a character you type.
 
-Restart Claude Code, and the next message you submit will be checked.
+## Settings
 
-## Prerequisites
+Run `/config` and type `cc-grammar`:
 
-- macOS or Linux
-- [Claude Code](https://docs.claude.com/en/docs/claude-code) installed and authenticated
-- `jq` (`brew install jq` / `apt install jq`)
-- A statusline tool — the setup command can wire [ccstatusline](https://github.com/sirmalloc/ccstatusline) or Claude Code's native `statusLine` for you
+| Setting | Default | What it does |
+| :- | :- | :- |
+| When | as I type and after I send | `as I type`: the gray English after a pause. `after I send`: the ✎ line. `off`: nothing goes to Haiku unless you press the key. |
+| Rule names | English | The language of the one-word rule name after each correction on the ✎ line, or `none`. |
+| Pause (ms) | 700 | How long after your last key the draft goes to Haiku. |
+| Longest draft (characters) | 280 | The longest draft that gets gray English while you type, and the longest message in another language that gets a ✎ line. The key takes longer drafts too. |
 
-## Cost
+## What goes where
 
-A `claude -p` call with Haiku fires on every prompt that passes the gates (non-empty, doesn't start with `/`, ≥10 chars). A few hundred input tokens and ~50 output tokens per check — negligible on the Pro/Team plans.
+- Your own words go to Claude Haiku for their English: a draft after each pause, even one you never send, and a message you sent without seeing its English.
+- Quote lines (`> …`) are not sent. A long paste, which the prompt shows as `[Pasted text #1 +40 lines]`, is not sent either: only that placeholder goes with your words. A short paste, which the prompt keeps inline, counts as your own words.
+- In shell mode (`!`) cc-grammar stays out of the way: no gray English, and the key does nothing.
+- Claude, in your conversation, never sees any of it: the gray text and the ✎ line are drawn for you only.
+- Nothing is written to disk.
+- Each check is one short Haiku call. Its cost does not show in your status line's total.
 
-## Troubleshooting
+## Version 1
 
-- **Nothing shows in the statusline** → run `/claude-grammar:setup` again. It'll detect what's missing and either fix it or print exact instructions. If it reports everything is wired, restart Claude Code.
-- **`Not logged in · Please run /login`** → the hook uses the same auth as your shell `claude`. If something is stripping Claude's environment, restore it.
-- **Want to silence it temporarily** → `claude plugin disable claude-grammar@rapita-claude-grammar` (re-enable with `enable`).
+v1 checked a prompt after you sent it, with an async `UserPromptSubmit` hook, and wrote up to three corrections to a file for your status line. It is kept at the [v1.0.0 tag](https://github.com/rapita/claude-grammar/tree/v1.0.0). Claude Code 2.1.300 reserves plugin names that start with `claude-`, so v1's name no longer passes validation, and v2 is named cc-grammar.
+
+Moving from v1:
+
+1. `claude plugin uninstall claude-grammar@rapita-claude-grammar`.
+2. Undo what `/claude-grammar:setup` added to your status line. With ccstatusline, delete the segment that runs `~/.claude/grammar-status.sh`. With a script of your own, delete the two lines it appended, the marker comment and the call. If setup wrote the whole `statusLine` block in `~/.claude/settings.json` because you had none, delete that block: deleting only its `command` line leaves invalid JSON.
+3. `rm ~/.claude/grammar-status.sh`.
 
 ## License
 
-MIT. See [CONTRIBUTING.md](./CONTRIBUTING.md) for design rationale, source install, tests, and everything else you'd touch when hacking on the plugin.
+MIT. [CONTRIBUTING.md](./CONTRIBUTING.md) covers how it works, the tests, and running it from source.
