@@ -34,6 +34,8 @@ claude plugin install cc-grammar@rapita-cc-grammar
 
 cc-grammar is a [mod](https://code.claude.com/docs/en/plugins/mods/overview). It needs Claude Code 2.1.300 or later in the terminal, with mods allowed.
 
+In the Code tab of the Claude desktop app, only the ✎ line works, once the app's own Claude Code is 2.1.300 or later. The app draws its own prompt box, so the gray English and the key work in the terminal alone.
+
 ### Bind the key
 
 cc-grammar adds the command `/english`. Bind Tab to it in `~/.claude/keybindings.json` (`/keybindings` opens the file):

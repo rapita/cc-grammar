@@ -2,6 +2,9 @@ import { expect, test } from 'claude-code/testing'
 
 const usage = { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 const composer = { kind: 'composer' } as const
+// The desktop app runs Claude Code as an SDK host: nobody at a terminal prompt, and its messages stamped `sdk`.
+const sdk = { kind: 'sdk' } as const
+const desktopSession = { cwd: '/', surface: null, isInteractive: false }
 
 /** The ✎ work runs after the submit settles: give it time to finish (the test runtime has timers; the mod types do not declare them). */
 const timers = globalThis as unknown as { setTimeout: (done: () => void, ms: number) => void }
@@ -22,6 +25,38 @@ test('a message sent in another language gets its English once, as a gray ✎ li
   expect(await sent.find({ text: '✎ Check why the export test fails on CI' })).not.toBe(undefined)
   const other = await $.ui.mount({ plugin: 'cc-grammar', surface: 'terminal', component: 'UserMessage', props: { text: 'a message nobody checked', origin: composer, isExpanded: false } })
   expect(await other.find({ text: /✎/ })).toBe(undefined)
+})
+
+test('a message sent in the desktop app gets its ✎ line there', async ($, on) => {
+  on('model.complete', async () => ({ value: { isAnswered: true, text: 'Check why the export test fails on CI', usage } }))
+  on('session.start', async ($, e) => ({ cwd: e.cwd }))
+  on('session.surfaces', async () => ({ value: ['desktop'] }))
+  on('prompt.submit', async ($, e) => ({ text: e.text }))
+  on('ui.render', { component: 'UserMessage' }, async ($, e) => {
+    const { Text } = $.ui.resolve(e)
+    return <Text>{e.props.text}</Text>
+  })
+  await $.session.start(desktopSession)
+  const text = 'перевір чому тест експорту падає на CI'
+  await $.prompt.submit({ text, wait: false, origin: sdk })
+  await settle()
+  const sent = await $.ui.mount({ plugin: 'cc-grammar', surface: 'desktop', component: 'UserMessage', props: { text, origin: sdk, isExpanded: false } })
+  expect(await sent.find({ text: '✎ Check why the export test fails on CI' })).not.toBe(undefined)
+})
+
+test('a -p run, which nothing draws, sends nothing to Haiku', async ($, on) => {
+  const asked: string[] = []
+  on('model.complete', async () => {
+    asked.push('haiku')
+    return { value: { isAnswered: true, text: 'Check why the export test fails on CI', usage } }
+  })
+  on('session.start', async ($, e) => ({ cwd: e.cwd }))
+  on('session.surfaces', async () => ({ value: [] }))
+  on('prompt.submit', async ($, e) => ({ text: e.text }))
+  await $.session.start(desktopSession)
+  await $.prompt.submit({ text: 'перевір чому тест експорту падає на CI', wait: false, origin: sdk })
+  await settle()
+  expect(asked).toEqual([])
 })
 
 test('the ✎ check reads the message as the box showed it: a long paste is its placeholder, never its lines', async ($, on) => {

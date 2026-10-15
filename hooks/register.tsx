@@ -6,7 +6,7 @@
 //   your words, or up to three corrections of your English, simplest first.
 // Nothing is sent for you and nothing goes on disk. Your own words go to Haiku for their English (a draft
 // too, after a pause, even one you never send); the conversation's model never sees any of this.
-import type { EngineInterface, PromptDecoration, Register } from 'claude-code'
+import type { EngineInterface, PromptDecoration, PromptOrigin, Register } from 'claude-code'
 
 import {
   SEGMENTS_SYSTEM,
@@ -95,6 +95,11 @@ const englishFor = async ($: EngineInterface, text: string): Promise<English | n
   if (!out || out.some((english, i) => !faithful(parts[i] ?? '', english))) return null
   return { draft: rebuild(text, out), preview: out.join(' / ') }
 }
+
+// Your own message: Enter at the terminal, or in the desktop app, which runs Claude Code as an SDK host. A -p
+// run is an SDK host too, but nothing draws it: no ✎ line to show, so nothing goes to Haiku for it.
+const yours = async ($: EngineInterface, origin: PromptOrigin) =>
+  origin.kind === 'composer' || (origin.kind === 'sdk' && (await $.session.surfaces()).length > 0)
 
 const unchanged = (text: string, english: English) => samish(english.preview, ownRuns(text).join(' / '))
 const gray = (text: string, words: string): PromptDecoration => ({ start: text.length, end: text.length, virtualText: words, color: GRAY })
@@ -205,6 +210,8 @@ export const register: Register = (on, options) => {
   pause = opts.pause ?? 700
   longest = opts.longest ?? 280
 
+  // The desktop app and -p runs draw their own prompt box, or none: no gray text, no key there. The ✎ line
+  // is decided per message, in prompt.submit.
   on('session.start', async ($, e, next) => {
     inert = !e.isInteractive
     if (!inert) {
@@ -284,7 +291,7 @@ export const register: Register = (on, options) => {
   on('prompt.submit', async ($, e, next) => {
     // Any submit ends Claude Code's suggestion.
     suggestion = ''
-    if (inert || e.origin.kind !== 'composer') return next(e)
+    if (!(await yours($, e.origin))) return next(e)
     edits++
     timer?.cancel()
     timer = null
@@ -325,7 +332,7 @@ export const register: Register = (on, options) => {
   // English you did not see before Enter: one gray line under your own message.
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
     const theirs = await next(e)
-    if (inert || !after || e.props.origin.kind !== 'composer') return theirs
+    if (!after || (e.props.origin.kind !== 'composer' && e.props.origin.kind !== 'sdk')) return theirs
     const line = fixes.get(norm(e.props.text))
     if (!line) return theirs
     const { Box, Text } = $.ui.resolve(e)
