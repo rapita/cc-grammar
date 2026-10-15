@@ -10,7 +10,7 @@
       "name": "cc-grammar",
       "source": "./",
       "description": "English while you write a prompt: the English of your draft in gray, one key to take it, and up to 3 corrections ordered by CEFR level (A1 first).",
-      "version": "2.0.4",
+      "version": "2.0.5",
       "author": {
         "name": "Nazar Rapita",
         "email": "n.i.rapita@gmail.com"
