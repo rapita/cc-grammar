@@ -1,6 +1,6 @@
 {
   "name": "cc-grammar",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "English while you write a prompt, for your eyes only. After a pause, the English of your draft shows in gray after it: translated from any language, or your English corrected. The key you bind to /english (Tab) takes it, and gives your words back. A message sent without seeing its English gets one gray ✎ line: the English, or up to 3 corrections ordered A1 → C1+. Your own words go to Haiku for this, drafts too; the conversation's model never sees any of it.",
   "author": {
     "name": "Nazar Rapita",
