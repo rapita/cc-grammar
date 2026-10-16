@@ -1,8 +1,9 @@
-import { expect, test } from 'claude-code/testing'
+import { expect, mock, test } from 'claude-code/testing'
 
 const usage = { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 const composer = { kind: 'composer' } as const
-// The desktop app runs Claude Code as an SDK host: nobody at a terminal prompt, and its messages stamped `sdk`.
+// Outside the terminal (the desktop app, VS Code, a -p run) Claude Code runs as an SDK host: isInteractive is
+// false. The desktop app submits what the person typed as `composer` and draws its row as `sdk`.
 const sdk = { kind: 'sdk' } as const
 const desktopSession = { cwd: '/', surface: null, isInteractive: false }
 
@@ -27,10 +28,13 @@ test('a message sent in another language gets its English once, as a gray ✎ li
   expect(await other.find({ text: /✎/ })).toBe(undefined)
 })
 
-test('a message sent in the desktop app gets its ✎ line there', async ($, on) => {
-  on('model.complete', async () => ({ value: { isAnswered: true, text: 'Check why the export test fails on CI', usage } }))
+test('outside the terminal, a sent message goes to no Haiku and gets no ✎ line', async ($, on) => {
+  const asked: string[] = []
+  on('model.complete', async () => {
+    asked.push('haiku')
+    return { value: { isAnswered: true, text: 'Check why the export test fails on CI', usage } }
+  })
   on('session.start', async ($, e) => ({ cwd: e.cwd }))
-  on('session.surfaces', async () => ({ value: ['desktop'] }))
   on('prompt.submit', async ($, e) => ({ text: e.text }))
   on('ui.render', { component: 'UserMessage' }, async ($, e) => {
     const { Text } = $.ui.resolve(e)
@@ -38,24 +42,31 @@ test('a message sent in the desktop app gets its ✎ line there', async ($, on) 
   })
   await $.session.start(desktopSession)
   const text = 'перевір чому тест експорту падає на CI'
-  await $.prompt.submit({ text, wait: false, origin: sdk })
+  await $.prompt.submit({ text, wait: false, origin: composer })
   await settle()
   const sent = await $.ui.mount({ plugin: 'cc-grammar', surface: 'desktop', component: 'UserMessage', props: { text, origin: sdk, isExpanded: false } })
-  expect(await sent.find({ text: '✎ Check why the export test fails on CI' })).not.toBe(undefined)
+  expect(asked).toEqual([])
+  expect(await sent.find({ text: /✎/ })).toBe(undefined)
 })
 
-test('a -p run, which nothing draws, sends nothing to Haiku', async ($, on) => {
+test('outside the terminal, typing sends nothing to Haiku, however long the pause', async ($, on) => {
+  const clock = mock.clock(on)
   const asked: string[] = []
   on('model.complete', async () => {
     asked.push('haiku')
     return { value: { isAnswered: true, text: 'Check why the export test fails on CI', usage } }
   })
   on('session.start', async ($, e) => ({ cwd: e.cwd }))
-  on('session.surfaces', async () => ({ value: [] }))
-  on('prompt.submit', async ($, e) => ({ text: e.text }))
+  on('prompt.edit', async ($, e) => {
+    const text = e.text.slice(0, e.start) + e.inputText + e.text.slice(e.end)
+    return { text, cursor: e.start + e.inputText.length }
+  })
+  const typed = 'перевір чому тест експорту падає на CI'
+  on('prompt.read', async () => ({ value: { text: typed, cursor: typed.length } }))
   await $.session.start(desktopSession)
-  await $.prompt.submit({ text: 'перевір чому тест експорту падає на CI', wait: false, origin: sdk })
-  await settle()
+  const box = $.prompt as unknown as { edit: (e: object) => Promise<unknown> }
+  await box.edit({ origin: composer, text: '', cursor: 0, start: 0, end: 0, inputText: typed })
+  await clock.advance(5000)
   expect(asked).toEqual([])
 })
 

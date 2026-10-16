@@ -6,7 +6,12 @@
 //   your words, or up to three corrections of your English, simplest first.
 // Nothing is sent for you and nothing goes on disk. Your own words go to Haiku for their English (a draft
 // too, after a pause, even one you never send); the conversation's model never sees any of this.
-import type { EngineInterface, PromptDecoration, PromptOrigin, Register } from 'claude-code'
+//
+// Where: the terminal alone, where Claude Code draws its own prompt box. The desktop app, VS Code and a -p
+// run are SDK hosts (`isInteractive` false): a remote host draws no gray text in its box and binds no key of
+// ours, so there every hook passes the event on at once, and nothing goes to Haiku or is drawn. What the
+// desktop app would need is in CONTRIBUTING.md.
+import type { EngineInterface, PromptDecoration, Register } from 'claude-code'
 
 import {
   SEGMENTS_SYSTEM,
@@ -35,7 +40,8 @@ type Options = { when?: When; rule_names?: string; pause?: number; longest?: num
 // english.preview is what the gray text shows.
 type English = { draft: string; preview: string }
 
-let inert = false
+// Set by session.start, which comes before the first prompt: true in the desktop app, VS Code or a -p run.
+let outsideTerminal = false
 let typing = true
 let after = true
 let ruleNames = 'English'
@@ -94,11 +100,6 @@ const englishFor = async ($: EngineInterface, text: string): Promise<English | n
   if (!out || out.some((english, i) => !faithful(parts[i] ?? '', english))) return null
   return { draft: rebuild(text, out), preview: out.join(' / ') }
 }
-
-// Your own message: Enter at the terminal, or in the desktop app, which runs Claude Code as an SDK host. A -p
-// run is an SDK host too, but nothing draws it: no ✎ line to show, so nothing goes to Haiku for it.
-const yours = async ($: EngineInterface, origin: PromptOrigin) =>
-  origin.kind === 'composer' || (origin.kind === 'sdk' && (await $.session.surfaces()).length > 0)
 
 const unchanged = (text: string, english: English) => samish(english.preview, ownRuns(text).join(' / '))
 const gray = (text: string, words: string): PromptDecoration => ({ start: text.length, end: text.length, virtualText: words, color: GRAY })
@@ -209,11 +210,10 @@ export const register: Register = (on, options) => {
   pause = opts.pause ?? 700
   longest = opts.longest ?? 280
 
-  // The desktop app and -p runs draw their own prompt box, or none: no gray text, no key there. The ✎ line
-  // is decided per message, in prompt.submit.
+  // Outside the terminal the command is never registered, so its key and its command.run hook never come.
   on('session.start', async ($, e, next) => {
-    inert = !e.isInteractive
-    if (!inert) {
+    outsideTerminal = !e.isInteractive
+    if (!outsideTerminal) {
       await $.command.register({
         name: 'english',
         description: 'Take the gray English of your draft, or give your words back (bind it to Tab)',
@@ -225,6 +225,7 @@ export const register: Register = (on, options) => {
 
   // /clear and /resume start another conversation in the same process: the box starts over.
   on('session.end', async ($, e, next) => {
+    if (outsideTerminal) return next(e)
     if (e.reason === 'clear' || e.reason === 'resume') forget()
     return next(e)
   })
@@ -235,6 +236,7 @@ export const register: Register = (on, options) => {
   })
 
   on('prompt.suggest', async ($, e, next) => {
+    if (outsideTerminal) return next(e)
     const r = await next(e)
     if (r.isShown) suggestion = e.text
     return r
@@ -242,14 +244,15 @@ export const register: Register = (on, options) => {
 
   // The hint row is the only place that tells shell mode: '! for shell mode'.
   on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
+    if (outsideTerminal) return next(e)
     shell = /shell mode/i.test(e.props.hint)
     return next(e)
   })
 
   on('prompt.edit', async ($, e, next) => {
+    if (outsideTerminal) return next(e)
     edits++
     const r = await next(e)
-    if (inert) return r
     const text = r.text
     if (text !== draft) {
       draft = text
@@ -275,9 +278,10 @@ export const register: Register = (on, options) => {
   })
 
   on('prompt.submit', async ($, e, next) => {
+    if (outsideTerminal) return next(e)
     // Any submit ends Claude Code's suggestion.
     suggestion = ''
-    if (!(await yours($, e.origin))) return next(e)
+    if (e.origin.kind !== 'composer') return next(e)
     edits++
     timer?.cancel()
     timer = null
@@ -317,8 +321,9 @@ export const register: Register = (on, options) => {
 
   // English you did not see before Enter: one gray line under your own message.
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
+    if (outsideTerminal) return next(e)
     const theirs = await next(e)
-    if (!after || (e.props.origin.kind !== 'composer' && e.props.origin.kind !== 'sdk')) return theirs
+    if (!after || e.props.origin.kind !== 'composer') return theirs
     const line = fixes.get(norm(e.props.text))
     if (!line) return theirs
     const { Box, Text } = $.ui.resolve(e)

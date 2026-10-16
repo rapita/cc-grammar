@@ -34,7 +34,7 @@ claude plugin install cc-grammar@rapita-cc-grammar
 
 cc-grammar is a [mod](https://code.claude.com/docs/en/plugins/mods/overview). It needs Claude Code 2.1.300 or later in the terminal, with mods allowed.
 
-In the Code tab of the Claude desktop app, only the ✎ line works; it needs the app's own Claude Code 2.1.299 or later. The app draws its own prompt box, so the gray English and the key work in the terminal alone.
+cc-grammar works in the terminal alone. In the Code tab of the Claude desktop app, in VS Code and in `claude -p` it loads and stays idle: nothing goes to Haiku and nothing is drawn. Support for the desktop app may come later; [CONTRIBUTING.md](./CONTRIBUTING.md#the-desktop-app-later) says what it waits for.
 
 ### Bind the key
 
