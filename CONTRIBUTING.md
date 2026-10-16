@@ -1,6 +1,6 @@
 # Contributing to cc-grammar
 
-How the mod works, how to run it from source, and how to test it.
+How the mod works, how to run it from source, how to test it, and how it is released.
 
 ## How it works
 
@@ -47,6 +47,15 @@ npx -p typescript tsc -p .    # after one load from --plugin-dir has written the
 - `tests/render.test.tsx` submits a message to a test engine whose Haiku answers are fixed, and checks the ✎ line drawn under it; outside the terminal, that neither typing nor sending reaches Haiku and nothing is drawn.
 - `tests/keys.test.tsx` checks the key with Claude Code's own suggestion and in shell mode.
 
+## Releases
+
+Commits on main follow [Conventional Commits](https://www.conventionalcommits.org): `feat:` for what a person notices, `fix:` for a bug, `feat!:` for a change that breaks an install or a setting, and `docs:`, `test:`, `ci:` and `chore:` for the rest. [release-please](https://github.com/googleapis/release-please) keeps a release pull request open from them. Merging it is the release: the version in `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` and `.release-please-manifest.json`, `CHANGELOG.md`, the tag `vX.Y.Z` and the GitHub release. Never set the version by hand. Then update the install:
+
+```bash
+claude plugin marketplace update rapita-cc-grammar
+claude plugin update cc-grammar@rapita-cc-grammar
+```
+
 ## Layout
 
 ```
@@ -54,6 +63,8 @@ npx -p typescript tsc -p .    # after one load from --plugin-dir has written the
 ├── .claude-plugin/
 │   ├── plugin.json           # manifest and the /config rows
 │   └── marketplace.json      # marketplace listing, and the rename of v1
+├── .github/workflows/
+│   └── release.yml           # release-please on each push to main
 ├── hooks/
 │   ├── hooks.json            # names the hooks module
 │   ├── register.tsx          # the hooks
@@ -63,6 +74,9 @@ npx -p typescript tsc -p .    # after one load from --plugin-dir has written the
 │   ├── keys.test.tsx
 │   └── render.test.tsx
 ├── tsconfig.json             # extends the generated one
+├── release-please-config.json
+├── .release-please-manifest.json
+├── CHANGELOG.md
 ├── LICENSE
 ├── README.md
 └── CONTRIBUTING.md

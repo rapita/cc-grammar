@@ -1,0 +1,29 @@
+name: Release
+
+# release-please keeps a release PR up to date from the commits on main. Merging that PR sets the
+# version in both manifests, writes CHANGELOG.md, tags vX.Y.Z and makes the GitHub release.
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Release PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The three that release-please asks for: it writes its branch, opens the pull request and labels it.
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: googleapis/release-please-action@v5
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
